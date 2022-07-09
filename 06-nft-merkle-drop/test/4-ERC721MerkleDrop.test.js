@@ -9,15 +9,15 @@ async function deploy(name, ...params) {
   return await Contract.deploy(...params).then(f => f.deployed());
 }
 
-function hashToken(tokenId, account) {
-  return Buffer.from(ethers.utils.solidityKeccak256(['uint256', 'address'], [tokenId, account]).slice(2), 'hex')
+function hashToken(account) {
+  return Buffer.from(ethers.utils.solidityKeccak256(['address'], [account]).slice(2), 'hex')
 }
 
 
 describe('ERC721MerkleDrop', function () {
   before(async function() {
     this.accounts = await ethers.getSigners();
-    this.merkleTree = new MerkleTree(Object.entries(tokens).map(token => hashToken(...token)), keccak256, { sortPairs: true });
+    this.merkleTree = new MerkleTree(Object.values(tokens).map(account => hashToken(account)), keccak256, { sortPairs: true });
   });
 
   describe('Mint all elements', function () {
@@ -30,11 +30,11 @@ describe('ERC721MerkleDrop', function () {
         /**
          * Create merkle proof (anyone with knowledge of the merkle tree)
          */
-        const proof = this.merkleTree.getHexProof(hashToken(tokenId, account));
+        const proof = this.merkleTree.getHexProof(hashToken(account));
         /**
          * Redeems token using merkle proof (anyone with the proof)
          */
-        await expect(this.registry.redeem(account, tokenId, proof))
+        await expect(this.registry.redeem(account, proof))
           .to.emit(this.registry, 'Transfer')
           .withArgs(ethers.constants.AddressZero, account, tokenId);
       });
@@ -47,17 +47,17 @@ describe('ERC721MerkleDrop', function () {
 
       this.token = {};
       [ this.token.tokenId, this.token.account ] = Object.entries(tokens).find(Boolean);
-      this.token.proof = this.merkleTree.getHexProof(hashToken(this.token.tokenId, this.token.account));
+      this.token.proof = this.merkleTree.getHexProof(hashToken(this.token.account));
     });
 
     it('mint once - success', async function () {
-      await expect(this.registry.redeem(this.token.account, this.token.tokenId, this.token.proof))
+      await expect(this.registry.redeem(this.token.account, this.token.proof))
         .to.emit(this.registry, 'Transfer')
         .withArgs(ethers.constants.AddressZero, this.token.account, this.token.tokenId);
     });
 
     it('mint twice - failure', async function () {
-      await expect(this.registry.redeem(this.token.account, this.token.tokenId, this.token.proof))
+      await expect(this.registry.redeem(this.token.account, this.token.proof))
         .to.be.revertedWith('ERC721: token already minted');
     });
   });
@@ -68,11 +68,11 @@ describe('ERC721MerkleDrop', function () {
 
       this.token = {};
       [ this.token.tokenId, this.token.account ] = Object.entries(tokens).find(Boolean);
-      this.token.proof = this.merkleTree.getHexProof(hashToken(this.token.tokenId, this.token.account));
+      this.token.proof = this.merkleTree.getHexProof(hashToken(this.token.account));
     });
 
     it('prevented', async function () {
-      await expect(this.registry.redeem(this.accounts[0].address, this.token.tokenId, this.token.proof))
+      await expect(this.registry.redeem(this.accounts[0].address, this.token.proof))
         .to.be.revertedWith('Invalid merkle proof');
     });
   });

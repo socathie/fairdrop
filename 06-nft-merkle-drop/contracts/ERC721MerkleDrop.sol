@@ -17,22 +17,21 @@ contract ERC721MerkleDrop is ERC721 {
 
     function redeem(
         address account,
-        uint256 tokenId,
         bytes32[] calldata proof
     ) external {
         require(
-            _verify(_leaf(account, tokenId), proof),
+            _verify(_leaf(account), proof),
             "Invalid merkle proof"
         );
         _safeMint(account, _randomTokenId(account));
     }
 
-    function _leaf(address account, uint256 tokenId)
+    function _leaf(address account)
         internal
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(tokenId, account));
+        return keccak256(abi.encodePacked(account));
     }
 
     function _verify(bytes32 leaf, bytes32[] memory proof)
