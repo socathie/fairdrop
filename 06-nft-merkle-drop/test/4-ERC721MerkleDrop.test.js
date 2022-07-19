@@ -17,15 +17,15 @@ function hashToken(account) {
 describe('ERC721MerkleDrop', function () {
   before(async function() {
     this.accounts = await ethers.getSigners();
-    this.merkleTree = new MerkleTree(Object.values(tokens).map(account => hashToken(account)), keccak256, { sortPairs: true });
+    this.merkleTree = new MerkleTree(Object.keys(tokens).map(account => hashToken(account)), keccak256, { sortPairs: true });
   });
 
   describe('Mint all elements', function () {
     before(async function() {
-      this.registry = await deploy('ERC721MerkleDrop', 'Name', 'Symbol', this.merkleTree.getHexRoot());
+      this.registry = await deploy('ERC721MerkleDrop', 'Name', 'Symbol', this.merkleTree.getHexRoot(), 100);
     });
 
-    for (const [tokenId, account] of Object.entries(tokens)) {
+    for (const [account, tokenId] of Object.entries(tokens)) {
       it('element', async function () {
         /**
          * Create merkle proof (anyone with knowledge of the merkle tree)
@@ -43,10 +43,10 @@ describe('ERC721MerkleDrop', function () {
 
   describe('Duplicate mint', function () {
     before(async function() {
-      this.registry = await deploy('ERC721MerkleDrop', 'Name', 'Symbol', this.merkleTree.getHexRoot());
+      this.registry = await deploy('ERC721MerkleDrop', 'Name', 'Symbol', this.merkleTree.getHexRoot(), 100);
 
       this.token = {};
-      [ this.token.tokenId, this.token.account ] = Object.entries(tokens).find(Boolean);
+      [ this.token.account, this.token.tokenId ] = Object.entries(tokens).find(Boolean);
       this.token.proof = this.merkleTree.getHexProof(hashToken(this.token.account));
     });
 
@@ -58,16 +58,16 @@ describe('ERC721MerkleDrop', function () {
 
     it('mint twice - failure', async function () {
       await expect(this.registry.redeem(this.token.account, this.token.proof))
-        .to.be.revertedWith('ERC721: token already minted');
+        .to.be.revertedWith('Already redeemed');
     });
   });
 
   describe('Frontrun', function () {
     before(async function() {
-      this.registry = await deploy('ERC721MerkleDrop', 'Name', 'Symbol', this.merkleTree.getHexRoot());
+      this.registry = await deploy('ERC721MerkleDrop', 'Name', 'Symbol', this.merkleTree.getHexRoot(), 100);
 
       this.token = {};
-      [ this.token.tokenId, this.token.account ] = Object.entries(tokens).find(Boolean);
+      [ this.token.account, this.token.tokenId ] = Object.entries(tokens).find(Boolean);
       this.token.proof = this.merkleTree.getHexProof(hashToken(this.token.account));
     });
 
