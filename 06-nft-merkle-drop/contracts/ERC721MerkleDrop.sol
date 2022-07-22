@@ -10,7 +10,7 @@ contract ERC721MerkleDrop is ERC721 {
     mapping(uint256 => uint256) private _availableTokens;
     uint256 private _numAvailableTokens;
 
-    mapping (address => bool) private _redeemed;
+    mapping(address => bool) private _redeemed;
 
     constructor(
         string memory name,
@@ -25,9 +25,9 @@ contract ERC721MerkleDrop is ERC721 {
     function redeem(address account, bytes32[] calldata proof) external {
         require(tx.origin == msg.sender); //prevent function call from contracts
         require(_verify(_leaf(account), proof), "Invalid merkle proof");
-        require(_numAvailableTokens>0, "Out of supply");
+        require(_numAvailableTokens > 0, "Out of supply");
         require(!_redeemed[account], "Already redeemed");
-        
+
         _safeMint(account, _randomTokenId(account, _numAvailableTokens));
         --_numAvailableTokens;
         _redeemed[account] = true;
@@ -61,9 +61,9 @@ contract ERC721MerkleDrop is ERC721 {
         internal
         returns (uint256)
     {
-        uint256 randomIndex = (uint256(
+        uint256 randomIndex = uint256(
             keccak256(abi.encodePacked(uint256(_vrf()), account))
-        ) % 100) % numAvailableTokens;
+        ) % numAvailableTokens;
         return _getAvailableTokenAtIndex(randomIndex, numAvailableTokens);
     }
 
